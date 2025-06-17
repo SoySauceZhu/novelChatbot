@@ -1,18 +1,15 @@
+import os
+
+
+def load_prompt_from_file(filename):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    prompt_path = os.path.join(base_dir, 'prompts', filename)
+    with open(prompt_path, 'r', encoding='utf-8') as f:
+        return f.read()
+
+
 def build_story_system_prompt():
-    prompt = (
-        "你是一个互动小说创作助手，专注于为玩家创作中国当代官场小说。\n"
-        "你的任务是根据玩家的输入和历史剧情概要，生成故事的下一段内容。\n"
-        "请确保叙事风格一致，剧情逻辑连贯，并且每章长度必须≥2000。\n"
-        "如果需要提供选项，请在故事中自然引入，并确保选项之间有明显差异。\n"
-        "输出格式必须为 JSON：\n"
-        "```\n"
-        "{\"story_chunk\": \"<生成的故事内容>\",\
-            \"options\": [\"A:<选项A内容>\", \"B:<选项B内容>\", \"C:<选项C内容>\"],\
-            \"word_count\": <章节字数>\n\
-        }\n"
-        "```\n"
-    )
-    return prompt
+    return load_prompt_from_file('story_system.txt')
 
 
 def build_story_continuation_prompt(history_summaries, last_story_chunk, user_input):
@@ -47,6 +44,7 @@ def build_story_continuation_prompt(history_summaries, last_story_chunk, user_in
         "```\n"
     )
     return prompt
+
 
 # def build_generate_options_prompt(latest_chunk):
 #     prompt = (
