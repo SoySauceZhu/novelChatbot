@@ -1,6 +1,7 @@
+fastapi
+pydantic
 openai
-faiss-cpu
 pyyaml
-numpy
 sentence-transformers
-transformers
+faiss-cpu
+numpy
