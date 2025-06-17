@@ -1,29 +1,19 @@
-from fastapi import FastAPI, Request
-from pydantic import BaseModel
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import openai
 import yaml
 import os
 from memory import init_index, add_memory, search_memory, save_index, get_embedding
 from state import load_state, save_state, update_state, get_state, update_past_status, get_past_status
 from prompt import build_story_continuation_prompt, build_summary_prompt, build_story_system_prompt, build_summary_system_prompt
-import shutil
-import re
 import logging
-from fastapi.middleware.cors import CORSMiddleware
+
+app = Flask(__name__)
+CORS(app)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 生产环境可指定前端地址
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Load config and initialize once
 config = yaml.safe_load(open("config.yaml", "r"))
@@ -38,12 +28,10 @@ client = openai.OpenAI(api_key=api_key, base_url=base_url)
 story_system_prompt = build_story_system_prompt()
 summary_system_prompt = build_summary_system_prompt()
 
-class ContinueStoryRequest(BaseModel):
-    user_input: str
-
-@app.post("/continue_story")
-def continue_story(req: ContinueStoryRequest):
-    user_input = req.user_input
+@app.route('/continue_story', methods=['POST'])
+def continue_story():
+    data = request.get_json()
+    user_input = data.get('user_input', '')
     logger.info(f"Received user input: {user_input}")
     # Search memory
     if index.ntotal > 0:
@@ -79,22 +67,25 @@ def continue_story(req: ContinueStoryRequest):
     add_memory(index, user_input)
     save_index(index)
     logger.info("State and memory updated.")
-    return {"story": result}
+    return jsonify({"story": result})
 
-@app.get("/state")
+@app.route('/state', methods=['GET'])
 def get_current_state():
     logger.info("State requested.")
-    return state
+    return jsonify(state)
 
-@app.post("/state")
-def update_current_state(new_chunk: str):
+@app.route('/state', methods=['POST'])
+def update_current_state():
+    new_chunk = request.get_json(force=True)
     logger.info(f"Updating state with new chunk: {new_chunk}")
     update_state(state, new_chunk)
     save_state(state)
-    return {"status": "ok"}
+    return jsonify({"status": "ok"})
 
-@app.post("/memory/search")
-def memory_search(query: str):
+@app.route('/memory/search', methods=['POST'])
+def memory_search():
+    data = request.get_json()
+    query = data.get('query', '')
     logger.info(f"Memory search for query: {query}")
     if index.ntotal > 0:
         I, D = search_memory(index, query)
@@ -102,4 +93,7 @@ def memory_search(query: str):
     else:
         memory_texts = []
     logger.info(f"Memory search results: {memory_texts}")
-    return {"results": memory_texts}
+    return jsonify({"results": memory_texts})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8000, debug=True)
