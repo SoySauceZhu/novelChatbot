@@ -1,0 +1,3 @@
+openai_api_key: "sk-9cc8ed8eee8d4a4582d1fd80ec295c71" 
+base_url: "https://api.deepseek.com"
+model: "deepseek-chat"
