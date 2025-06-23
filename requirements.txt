@@ -1,0 +1,6 @@
+openai
+faiss-cpu
+pyyaml
+numpy
+sentence-transformers
+transformers
